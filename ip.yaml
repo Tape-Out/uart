@@ -1,44 +1,69 @@
 name: uart
 version: 0.1.0
-spec: "0.1"
+spec: '0.1'
 kind: ip
 lang: bsv
-
 identity:
   slug: uart-tapeout-bsv
   display_name: UART with configurable FIFOs
   summary: UART with programmable baud, configurable FIFO depth and watermark interrupts.
   category: peripheral
-  subcategories: [uart]
+  subcategories:
+  - uart
   ip_family: uart
-  integration_profile: [apb4-slave]
+  integration_profile:
+  - apb4-slave
   maturity: planned
-
 contract:
   version: 1
-  ctrl: { shape: flat, aw: 8, dw: 32 }
+  ctrl:
+    shape: flat
+    aw: 8
+    dw: 32
   irq:
-    - { name: irq, kind: level }
-
+  - name: irq
+    kind: level
 params:
-  fifoDepth: { type: int, default: 8, range: [1, 64] }
-
+  fifoDepth:
+    type: int
+    default: 8
+    range:
+    - 1
+    - 64
 features:
-  parity:   { type: bool, default: false }
-  flowctrl: { type: bool, default: false }
-
+  parity:
+    type: bool
+    default: false
+  flowctrl:
+    type: bool
+    default: false
 area:
-  base: { fixed: 400.0, per: fifoDepth, k: 120.0 }
-  model: linear-additive
-  error: { bound: 0.07, sign: over }
-  corner: { tool: ecc, pdk: ics55, freq_mhz: 100, measured: "2026-09-08" }
-
+  base:
+    per: fifoDepth
+    points:
+      1: 1689.24
+      2: 1897.56
+      4: 2532.6
+      8: 3375.96
+      16: 5000.52
+      32: 8062.6
+    margin: 0.04
+  model: measured-points
+  error:
+    bound: 0.06
+    sign: over
+    note: points interpolated then lifted 4%; the raw chord under-predicts a concave
+      curve by up to 3.54%
+  corner:
+    tool: ecc
+    pdk: ics55
+    freq_mhz: 100
+    measured: '2026-09-08'
 emit:
-  - kind: bsv
-    package: Uart
-    module: mkUart
-    config_type: UartCfg
-    interface: UartIfc
-
+- kind: bsv
+  package: Uart
+  module: mkUart
+  config_type: UartCfg
+  interface: UartIfc
 deps:
-  hwcore: "^0.1"
+  hwcore: ^0.1

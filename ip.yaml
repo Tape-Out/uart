@@ -34,38 +34,184 @@ features:
   parity:
     type: bool
     default: false
+    area:
+      points:
+        '1': 147.56
+        '2': 147.0
+        '4': 83.16
+        '8': 90.16
+        '16': 153.72
+        '32': 154.84
+      per: fifoDepth
   flowctrl:
     type: bool
     default: false
+    area:
+      points:
+        '1': 17.92
+        '2': 55.72
+        '4': 26.6
+        '8': 31.92
+        '16': 107.8
+        '32': 46.48
+      per: fifoDepth
 area:
   base:
-    per: fifoDepth
     points:
-      1: 1689.24
-      2: 1897.56
-      4: 2532.6
-      8: 3375.96
-      16: 5000.52
-      32: 8062.6
-    margin: 0.04
-  model: measured-points
+      '1': 1591.8
+      '2': 1797.32
+      '4': 2358.72
+      '8': 3244.08
+      '16': 4949.84
+      '32': 7988.12
+    per: fifoDepth
+  margin: 0.0163
+  model: points-additive
   error:
-    bound: 0.06
+    bound: 0.066
     sign: over
-    note: points interpolated then lifted 4 percent; the raw chord under-predicts
-      a concave curve by up to 3.54 percent
+    note: parameter curves stored as measured points, features added on top, then
+      lifted by 0.0163 so that no untested combination predicts under; the worst came
+      in 1.13 percent under before the lift
+  measured:
+  - at:
+      fifoDepth: 1
+      parity: false
+      flowctrl: false
+    um2: 1591.8
+  - at:
+      fifoDepth: 2
+      parity: false
+      flowctrl: false
+    um2: 1797.32
+  - at:
+      fifoDepth: 4
+      parity: false
+      flowctrl: false
+    um2: 2358.72
+  - at:
+      fifoDepth: 8
+      parity: false
+      flowctrl: false
+    um2: 3244.08
+  - at:
+      fifoDepth: 16
+      parity: false
+      flowctrl: false
+    um2: 4949.84
+  - at:
+      fifoDepth: 32
+      parity: false
+      flowctrl: false
+    um2: 7988.12
+  - at:
+      fifoDepth: 1
+      parity: false
+      flowctrl: true
+    um2: 1609.72
+  - at:
+      fifoDepth: 2
+      parity: false
+      flowctrl: true
+    um2: 1853.04
+  - at:
+      fifoDepth: 4
+      parity: false
+      flowctrl: true
+    um2: 2385.32
+  - at:
+      fifoDepth: 8
+      parity: false
+      flowctrl: true
+    um2: 3276.0
+  - at:
+      fifoDepth: 16
+      parity: false
+      flowctrl: true
+    um2: 5057.64
+  - at:
+      fifoDepth: 32
+      parity: false
+      flowctrl: true
+    um2: 8034.6
+  - at:
+      fifoDepth: 1
+      parity: true
+      flowctrl: false
+    um2: 1739.36
+  - at:
+      fifoDepth: 2
+      parity: true
+      flowctrl: false
+    um2: 1944.32
+  - at:
+      fifoDepth: 4
+      parity: true
+      flowctrl: false
+    um2: 2441.88
+  - at:
+      fifoDepth: 8
+      parity: true
+      flowctrl: false
+    um2: 3334.24
+  - at:
+      fifoDepth: 16
+      parity: true
+      flowctrl: false
+    um2: 5103.56
+  - at:
+      fifoDepth: 32
+      parity: true
+      flowctrl: false
+    um2: 8142.96
+  - at:
+      fifoDepth: 1
+      parity: true
+      flowctrl: true
+    um2: 1703.24
+  - at:
+      fifoDepth: 2
+      parity: true
+      flowctrl: true
+    um2: 1914.92
+  - at:
+      fifoDepth: 4
+      parity: true
+      flowctrl: true
+    um2: 2430.68
+  - at:
+      fifoDepth: 8
+      parity: true
+      flowctrl: true
+    um2: 3376.52
+  - at:
+      fifoDepth: 16
+      parity: true
+      flowctrl: true
+    um2: 5100.2
+  - at:
+      fifoDepth: 32
+      parity: true
+      flowctrl: true
+    um2: 8282.96
   corner:
     tool: ecc
     pdk: ics55
     freq_mhz: 100
     measured: '2026-09-08'
-    note: measured against the hand-written Uart.bsv plus generated regs
-    gen_digest: sha256:c1da0e0c789da7fd
+    gen_digest: sha256:2b78c57e6790a7b4
 emit:
 - kind: bsv
   package: Uart
   module: mkUart
   config_type: UartCfg
   interface: UartIfc
+  ctrl: regs
+  pins:
+  - name: pins
+    type: UartPins
+- kind: verilog-flat
+  bus: apb4
 deps:
   hwcore: ^0.1
+  amba: ^0.1

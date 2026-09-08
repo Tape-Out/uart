@@ -16,16 +16,27 @@ regs:
     offset: 0x04
     desc: receive data, read pops
     fields:
-      - { name: data,  bits: "7:0",   sw: r, hw: w, volatile: true, swacc: true }
-      - { name: empty, bits: "31:31", sw: r, hw: w, volatile: true }
+      - { name: data,   bits: "7:0",   sw: r, hw: w, volatile: true, swacc: true }
+      - { name: parerr, bits: "30:30", sw: r, hw: w, volatile: true, feature: parity }
+      - { name: empty,  bits: "31:31", sw: r, hw: w, volatile: true }
 
   - name: txctrl
     offset: 0x08
     desc: transmit control
     fields:
-      - { name: txen,  bits: "0:0",   sw: rw, hw: r, reset: 0 }
-      - { name: nstop, bits: "1:1",   sw: rw, hw: r, reset: 0 }
-      - { name: txcnt, bits: "18:16", sw: rw, hw: r, reset: 0 }
+      - { name: txen,      bits: "0:0",   sw: rw, hw: r, reset: 0 }
+      - { name: nstop,     bits: "1:1",   sw: rw, hw: r, reset: 0 }
+      - { name: pariten,   bits: "2:2",   sw: rw, hw: r, reset: 0, feature: parity }
+      - { name: paritysel, bits: "3:3",   sw: rw, hw: r, reset: 0, feature: parity }
+      - { name: ctsen,     bits: "4:4",   sw: rw, hw: r, reset: 0, feature: flowctrl }
+      - { name: txcnt,     bits: "18:16", sw: rw, hw: r, reset: 0 }
+
+  - name: rxctrl
+    offset: 0x0C
+    desc: receive control
+    fields:
+      - { name: rxen,  bits: "0:0",   sw: rw, hw: r, reset: 0 }
+      - { name: rxcnt, bits: "18:16", sw: rw, hw: r, reset: 0 }
 
   - name: ie
     offset: 0x10

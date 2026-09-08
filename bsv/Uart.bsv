@@ -83,18 +83,21 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
     txPend <= r.txdata_data_wr;
   endrule
 
-  rule txRun (r.txctrl_txen == 1);
-    if (txBit == 0) begin
-      if (txq.notEmpty && txOk) begin
-        Bit#(8) d = txq.first;
-        Bit#(1) p = (parSel == 1) ? ~(^d) : (^d);   // 0 偶校验，1 奇校验
-        // 低位先出：起始 + 数据 + 校验(或第一个停止) + 停止
-        txSh  <= {2'b11, (parEn == 1) ? p : 1'b1, d, 1'b0};
-        txq.deq;
-        txBit <= 1;
-        txDiv <= r.div;
-      end
-    end else if (txDiv == 0) begin
+  // 取数单列一条规则。写在下面那条的分支里的话，`first`/`deq` 的隐式条件会被
+  // **提升到整条规则**——队列一空，连移位都停了，最后一个字节发一半就断在线上。
+  // 自环测试逮到的就是这个：前三个字节好好的，第四个收回来是全零。
+  rule txLoad (r.txctrl_txen == 1 && txBit == 0 && txOk);
+    Bit#(8) d = txq.first;
+    Bit#(1) p = (parSel == 1) ? ~(^d) : (^d);   // 0 偶校验，1 奇校验
+    // 低位先出：起始 + 数据 + 校验(或第一个停止) + 停止
+    txSh  <= {2'b11, (parEn == 1) ? p : 1'b1, d, 1'b0};
+    txq.deq;
+    txBit <= 1;
+    txDiv <= r.div;
+  endrule
+
+  rule txShift (r.txctrl_txen == 1 && txBit != 0);
+    if (txDiv == 0) begin
       txSh  <= {1'b1, txSh[11:1]};
       txDiv <= r.div;
       txBit <= (txBit == txLast) ? 0 : txBit + 1;

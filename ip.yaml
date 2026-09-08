@@ -52,13 +52,15 @@ area:
   error:
     bound: 0.06
     sign: over
-    note: points interpolated then lifted 4%; the raw chord under-predicts a concave
-      curve by up to 3.54%
+    note: points interpolated then lifted 4 percent; the raw chord under-predicts
+      a concave curve by up to 3.54 percent
   corner:
     tool: ecc
     pdk: ics55
     freq_mhz: 100
     measured: '2026-09-08'
+    generator: '0.3'
+    note: measured against the hand-written Uart.bsv plus generated regs
 emit:
 - kind: bsv
   package: Uart

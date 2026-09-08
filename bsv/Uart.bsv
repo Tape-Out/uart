@@ -4,6 +4,13 @@ import FIFOF::*;
 import RegIf::*;
 import UartRegs::*;
 
+// 恒零的只读寄存器：特性关掉时占位，写进去什么也不发生，综合器整片消掉
+function Reg#(t) roReg(t v) =
+  interface Reg;
+    method t _read = v;
+    method Action _write(t x) = noAction;
+  endinterface;
+
 // 本包不认识任何总线：对外只给中立的 RegIf，接哪种总线由 wrap 或装配决定。
 typedef struct {
   Bool parity;
@@ -47,8 +54,13 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
   Reg#(Bit#(16)) rxDiv  <- mkReg(0);
   Reg#(Bit#(4))  rxBit  <- mkReg(0);
   Reg#(Bit#(8))  rxSh   <- mkReg(0);
-  Reg#(Bit#(1))  rxPar  <- mkReg(0);
-  Reg#(Bit#(1))  rxErr  <- mkReg(0);
+  // 关掉校验就不例化这两个。只挡逻辑不挡例化的开关一分钱都不省。
+  Reg#(Bit#(1))  rxPar = roReg(0);
+  Reg#(Bit#(1))  rxErr = roReg(0);
+  if (cfg.parity) begin
+    rxPar <- mkReg(0);
+    rxErr <- mkReg(0);
+  end
   Wire#(Bit#(1)) rxLine <- mkBypassWire;
   Wire#(Bit#(1)) ctsLine <- mkBypassWire;
   Reg#(Bit#(1))  rxSync <- mkReg(1);

@@ -1,0 +1,44 @@
+name: uart
+version: 0.1.0
+spec: "0.1"
+kind: ip
+lang: bsv
+
+identity:
+  slug: uart-tapeout-bsv
+  display_name: UART with configurable FIFOs
+  summary: UART with programmable baud, configurable FIFO depth and watermark interrupts.
+  category: peripheral
+  subcategories: [uart]
+  ip_family: uart
+  integration_profile: [apb4-slave]
+  maturity: planned
+
+contract:
+  version: 1
+  ctrl: { shape: flat, aw: 8, dw: 32 }
+  irq:
+    - { name: irq, kind: level }
+
+params:
+  fifoDepth: { type: int, default: 8, range: [1, 64] }
+
+features:
+  parity:   { type: bool, default: false }
+  flowctrl: { type: bool, default: false }
+
+area:
+  base: { fixed: 400.0, per: fifoDepth, k: 120.0 }
+  model: linear-additive
+  error: { bound: 0.07, sign: over }
+  corner: { tool: ecc, pdk: ics55, freq_mhz: 100, measured: "2026-09-08" }
+
+emit:
+  - kind: bsv
+    package: Uart
+    module: mkUart
+    config_type: UartCfg
+    interface: UartIfc
+
+deps:
+  hwcore: "^0.1"

@@ -1,0 +1,48 @@
+ip: uart
+contract: { aw: 8, dw: 32 }
+base: 0x10001000
+size: 0x100
+params: [fifoDepth]
+
+regs:
+  - name: txdata
+    offset: 0x00
+    desc: transmit data, write pushes
+    fields:
+      - { name: data, bits: "7:0",   sw: w, hw: r, swmod: true }
+      - { name: full, bits: "31:31", sw: r, hw: w, volatile: true }
+
+  - name: rxdata
+    offset: 0x04
+    desc: receive data, read pops
+    fields:
+      - { name: data,  bits: "7:0",   sw: r, hw: w, volatile: true, swacc: true }
+      - { name: empty, bits: "31:31", sw: r, hw: w, volatile: true }
+
+  - name: txctrl
+    offset: 0x08
+    desc: transmit control
+    fields:
+      - { name: txen,  bits: "0:0",   sw: rw, hw: r, reset: 0 }
+      - { name: nstop, bits: "1:1",   sw: rw, hw: r, reset: 0 }
+      - { name: txcnt, bits: "18:16", sw: rw, hw: r, reset: 0 }
+
+  - name: ie
+    offset: 0x10
+    desc: interrupt enable
+    fields:
+      - { name: txwm, bits: "0:0", sw: rw, hw: r, reset: 0 }
+      - { name: rxwm, bits: "1:1", sw: rw, hw: r, reset: 0 }
+
+  - name: ip
+    offset: 0x14
+    desc: interrupt pending, combinational
+    fields:
+      - { name: txwm, bits: "0:0", sw: r, hw: w, volatile: true }
+      - { name: rxwm, bits: "1:1", sw: r, hw: w, volatile: true }
+
+  - name: div
+    offset: 0x18
+    desc: baud divisor
+    fields:
+      - { name: val, width: 16, sw: rw, hw: r, reset: 434 }

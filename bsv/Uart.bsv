@@ -34,9 +34,13 @@ interface UartIfc#(numeric type aw, numeric type dw, numeric type fifoDepth);
   (* always_ready *) method Bool irq;
 endinterface
 
+// 队列占用数的宽度：既要放得下深度，也要放得下水线门限那三位
+typedef TMax#(TAdd#(TLog#(TAdd#(n, 1)), 1), 4) LevelW#(numeric type n);
+
 module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
     provisos (Mul#(TDiv#(dw, 8), 8, dw), Add#(_a, 8, aw),
-              Add#(_b, 1, dw), Add#(_c, 8, dw), Add#(_d, 3, dw), Add#(_e, 16, dw));
+              Add#(_b, 1, dw), Add#(_c, 8, dw), Add#(_d, 3, dw), Add#(_e, 16, dw),
+              Add#(_f, 3, LevelW#(fifoDepth)));
 
   UartRegsIfc#(aw, dw, fifoDepth) r <- mkUartRegs(
       UartRegsCfg { parity: cfg.parity, flowctrl: cfg.flowctrl });
@@ -45,6 +49,16 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
   // 硬件那一端走规则，带守卫才对——一刀切 mkUG* 会让规则去 deq 空队列。
   FIFOF#(Bit#(8)) txq <- mkGSizedFIFOF(True,  False, valueOf(fifoDepth));
   FIFOF#(Bit#(8)) rxq <- mkGSizedFIFOF(False, True,  valueOf(fifoDepth));
+
+  // 水线要知道队列里有几个，而 FIFOF 不给计数。入队与出队在不同规则里，
+  // 共用一个计数寄存器会让两条规则抢同一个写口——所以各自一个自由计数器，
+  // 相减即占用数。计数回绕不影响：宽度够，差值永远小于模。
+  Reg#(Bit#(LevelW#(fifoDepth))) txIn  <- mkReg(0);
+  Reg#(Bit#(LevelW#(fifoDepth))) txOut <- mkReg(0);
+  Reg#(Bit#(LevelW#(fifoDepth))) rxIn  <- mkReg(0);
+  Reg#(Bit#(LevelW#(fifoDepth))) rxOut <- mkReg(0);
+  Bit#(LevelW#(fifoDepth)) txLevel = txIn - txOut;
+  Bit#(LevelW#(fifoDepth)) rxLevel = rxIn - rxOut;
 
   Reg#(Bit#(16)) txDiv  <- mkReg(0);
   Reg#(Bit#(4))  txBit  <- mkReg(0);      // 0 空闲，1 起始，2..9 数据，之后校验与停止
@@ -77,6 +91,7 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
   // 写一条里就是 G0021 自相矛盾。拆开之后次序是「入队 -> 总线方法 -> 记脉冲」。
   rule txEnq (txPend && txq.notFull);
     txq.enq(r.txdata_data);
+    txIn <= txIn + 1;
   endrule
 
   rule txMark;
@@ -92,6 +107,7 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
     // 低位先出：起始 + 数据 + 校验(或第一个停止) + 停止
     txSh  <= {2'b11, (parEn == 1) ? p : 1'b1, d, 1'b0};
     txq.deq;
+    txOut <= txOut + 1;
     txBit <= 1;
     txDiv <= r.div;
   endrule
@@ -124,7 +140,7 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
       if (rxBit == last) begin
         Bit#(1) want = (parSel == 1) ? ~(^rxSh) : (^rxSh);
         if (cfg.parity && parEn == 1 && rxPar != want) rxErr <= 1;
-        else if (rxq.notFull) rxq.enq(rxSh);
+        else if (rxq.notFull) begin rxq.enq(rxSh); rxIn <= rxIn + 1; end
         rxBit <= 0;
       end else
         rxBit <= rxBit + 1;
@@ -137,14 +153,17 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
     r.txdata_full_in(txq.notFull ? 0 : 1);
     r.rxdata_data_in(rxq.first);
     r.rxdata_empty_in(rxq.notEmpty ? 0 : 1);
-    r.ip_txwm_in(txq.notFull ? 1 : 0);
-    r.ip_rxwm_in(rxq.notEmpty ? 1 : 0);
+    // SiFive 的水线语义：发送队列**少于**门限才叫，接收队列**多于**门限才叫。
+    // 原来只看队列空不空，两个门限寄存器写得进去却什么也不改变。
+    r.ip_txwm_in(txLevel < zeroExtend(r.txctrl_txcnt) ? 1 : 0);
+    r.ip_rxwm_in(rxLevel > zeroExtend(r.rxctrl_rxcnt) ? 1 : 0);
     if (cfg.parity) r.rxdata_parerr_in(rxErr);
   endrule
 
   // swacc：软件读过 rxdata 就弹一个。这一条同拍成立，因为 deq 是动作不是取值。
   rule rxPop (r.rxdata_data_rd && rxq.notEmpty);
     rxq.deq;
+    rxOut <= rxOut + 1;
   endrule
 
   interface regs = r.regs;
@@ -157,7 +176,9 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
   endinterface
   // volatile 字段是单向的：硬件驱动、软件只读，硬件不该读回自己驱动的值。
   // 中断直接从 FIFO 状态算，与喂给 ip 寄存器的是同一个表达式。
-  method Bool irq = ((r.ie_txwm == 1) && txq.notFull) || ((r.ie_rxwm == 1) && rxq.notEmpty);
+  method Bool irq =
+    ((r.ie_txwm == 1) && txLevel < zeroExtend(r.txctrl_txcnt))
+    || ((r.ie_rxwm == 1) && rxLevel > zeroExtend(r.rxctrl_rxcnt));
 endmodule
 
 endpackage

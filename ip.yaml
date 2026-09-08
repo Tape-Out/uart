@@ -200,12 +200,6 @@ area:
     freq_mhz: 100
     measured: '2026-09-08'
     gen_digest: sha256:2b78c57e6790a7b4
-test:
-  # 收发水线的门限还没实现：中断现在只看「队列非空 / 队列非满」，
-  # 不看水线值。身份里写了 watermark interrupts，这是欠的账。
-  unused:
-  - txctrl_txcnt
-  - rxctrl_rxcnt
 emit:
 - kind: bsv
   package: Uart

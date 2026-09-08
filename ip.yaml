@@ -36,170 +36,124 @@ features:
     default: false
     area:
       points:
-        '1': 147.56
-        '2': 147.0
-        '4': 83.16
-        '8': 90.16
-        '16': 153.72
-        '32': 154.84
+        '1': 144.76
+        '2': 115.08
+        '4': 43.4
+        '8': 117.32
       per: fifoDepth
   flowctrl:
     type: bool
     default: false
     area:
       points:
-        '1': 17.92
-        '2': 55.72
-        '4': 26.6
-        '8': 31.92
-        '16': 107.8
-        '32': 46.48
+        '1': 38.08
+        '2': -14.84
+        '4': -74.2
+        '8': -19.04
       per: fifoDepth
 area:
   base:
     points:
-      '1': 1591.8
-      '2': 1797.32
-      '4': 2358.72
-      '8': 3244.08
-      '16': 4949.84
-      '32': 7988.12
+      '1': 1815.8
+      '2': 2030.0
+      '4': 2684.92
+      '8': 3538.36
     per: fifoDepth
-  margin: 0.0163
+  margin: 0.047
   model: points-additive
   error:
-    bound: 0.066
+    bound: 0.084
     sign: over
     note: parameter curves stored as measured points, features added on top, then
-      lifted by 0.0163 so that no untested combination predicts under; the worst came
-      in 1.13 percent under before the lift
+      lifted by 0.047 so that no untested combination predicts under; the worst came
+      in 4.20 percent under before the lift
   measured:
   - at:
       fifoDepth: 1
       parity: false
       flowctrl: false
-    um2: 1591.8
+    um2: 1815.8
   - at:
       fifoDepth: 2
       parity: false
       flowctrl: false
-    um2: 1797.32
+    um2: 2030.0
   - at:
       fifoDepth: 4
       parity: false
       flowctrl: false
-    um2: 2358.72
+    um2: 2684.92
   - at:
       fifoDepth: 8
       parity: false
       flowctrl: false
-    um2: 3244.08
-  - at:
-      fifoDepth: 16
-      parity: false
-      flowctrl: false
-    um2: 4949.84
-  - at:
-      fifoDepth: 32
-      parity: false
-      flowctrl: false
-    um2: 7988.12
+    um2: 3538.36
   - at:
       fifoDepth: 1
       parity: false
       flowctrl: true
-    um2: 1609.72
+    um2: 1853.88
   - at:
       fifoDepth: 2
       parity: false
       flowctrl: true
-    um2: 1853.04
+    um2: 2015.16
   - at:
       fifoDepth: 4
       parity: false
       flowctrl: true
-    um2: 2385.32
+    um2: 2610.72
   - at:
       fifoDepth: 8
       parity: false
       flowctrl: true
-    um2: 3276.0
-  - at:
-      fifoDepth: 16
-      parity: false
-      flowctrl: true
-    um2: 5057.64
-  - at:
-      fifoDepth: 32
-      parity: false
-      flowctrl: true
-    um2: 8034.6
+    um2: 3519.32
   - at:
       fifoDepth: 1
       parity: true
       flowctrl: false
-    um2: 1739.36
+    um2: 1960.56
   - at:
       fifoDepth: 2
       parity: true
       flowctrl: false
-    um2: 1944.32
+    um2: 2145.08
   - at:
       fifoDepth: 4
       parity: true
       flowctrl: false
-    um2: 2441.88
+    um2: 2728.32
   - at:
       fifoDepth: 8
       parity: true
       flowctrl: false
-    um2: 3334.24
-  - at:
-      fifoDepth: 16
-      parity: true
-      flowctrl: false
-    um2: 5103.56
-  - at:
-      fifoDepth: 32
-      parity: true
-      flowctrl: false
-    um2: 8142.96
+    um2: 3655.68
   - at:
       fifoDepth: 1
       parity: true
       flowctrl: true
-    um2: 1703.24
+    um2: 1939.56
   - at:
       fifoDepth: 2
       parity: true
       flowctrl: true
-    um2: 1914.92
+    um2: 2147.04
   - at:
       fifoDepth: 4
       parity: true
       flowctrl: true
-    um2: 2430.68
+    um2: 2770.6
   - at:
       fifoDepth: 8
       parity: true
       flowctrl: true
-    um2: 3376.52
-  - at:
-      fifoDepth: 16
-      parity: true
-      flowctrl: true
-    um2: 5100.2
-  - at:
-      fifoDepth: 32
-      parity: true
-      flowctrl: true
-    um2: 8282.96
+    um2: 3712.24
   corner:
     tool: ecc
     pdk: ics55
     freq_mhz: 100
-    measured: '2026-09-08'
-    gen_digest: sha256:2b78c57e6790a7b4
+    measured: '2026-09-09'
+    gen_digest: sha256:0da0e5282eaa8a4d
 emit:
 - kind: bsv
   package: Uart

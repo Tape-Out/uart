@@ -59,8 +59,8 @@ area:
     pdk: ics55
     freq_mhz: 100
     measured: '2026-09-08'
-    generator: '0.3'
     note: measured against the hand-written Uart.bsv plus generated regs
+    gen_digest: sha256:c1da0e0c789da7fd
 emit:
 - kind: bsv
   package: Uart

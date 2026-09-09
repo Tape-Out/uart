@@ -6,7 +6,8 @@ lang: bsv
 identity:
   slug: uart-tapeout-bsv
   display_name: UART with configurable FIFOs
-  summary: UART with programmable baud, configurable FIFO depth and watermark interrupts.
+  summary: UART with programmable baud, configurable FIFO depth and watermark 
+    interrupts.
   category: peripheral
   subcategories:
   - uart
@@ -36,124 +37,124 @@ features:
     default: false
     area:
       points:
-        '1': 144.76
-        '2': 115.08
-        '4': 43.4
-        '8': 117.32
+        '1': 80.36
+        '2': 107.8
+        '4': 129.08
+        '8': 160.72
       per: fifoDepth
   flowctrl:
     type: bool
     default: false
     area:
       points:
-        '1': 38.08
-        '2': -14.84
-        '4': -74.2
-        '8': -19.04
+        '1': -12.6
+        '2': 50.4
+        '4': 25.48
+        '8': 59.92
       per: fifoDepth
 area:
   base:
     points:
-      '1': 1815.8
-      '2': 2030.0
-      '4': 2684.92
-      '8': 3538.36
+      '1': 1831.76
+      '2': 1988.28
+      '4': 2571.52
+      '8': 3568.88
     per: fifoDepth
   margin: 0.047
   model: points-additive
   error:
     bound: 0.084
     sign: over
-    note: parameter curves stored as measured points, features added on top, then
-      lifted by 0.047 so that no untested combination predicts under; the worst came
-      in 4.20 percent under before the lift
+    note: parameter curves stored as measured points, features added on top, 
+      then lifted by 0.047 so that no untested combination predicts under; the 
+      worst came in 4.20 percent under before the lift
   measured:
   - at:
       fifoDepth: 1
       parity: false
       flowctrl: false
-    um2: 1815.8
+    um2: 1831.76
   - at:
       fifoDepth: 2
       parity: false
       flowctrl: false
-    um2: 2030.0
+    um2: 1988.28
   - at:
       fifoDepth: 4
       parity: false
       flowctrl: false
-    um2: 2684.92
+    um2: 2571.52
   - at:
       fifoDepth: 8
       parity: false
       flowctrl: false
-    um2: 3538.36
+    um2: 3568.88
   - at:
       fifoDepth: 1
       parity: false
       flowctrl: true
-    um2: 1853.88
+    um2: 1819.16
   - at:
       fifoDepth: 2
       parity: false
       flowctrl: true
-    um2: 2015.16
+    um2: 2038.68
   - at:
       fifoDepth: 4
       parity: false
       flowctrl: true
-    um2: 2610.72
+    um2: 2597.0
   - at:
       fifoDepth: 8
       parity: false
       flowctrl: true
-    um2: 3519.32
+    um2: 3628.8
   - at:
       fifoDepth: 1
       parity: true
       flowctrl: false
-    um2: 1960.56
+    um2: 1912.12
   - at:
       fifoDepth: 2
       parity: true
       flowctrl: false
-    um2: 2145.08
+    um2: 2096.08
   - at:
       fifoDepth: 4
       parity: true
       flowctrl: false
-    um2: 2728.32
+    um2: 2700.6
   - at:
       fifoDepth: 8
       parity: true
       flowctrl: false
-    um2: 3655.68
+    um2: 3729.6
   - at:
       fifoDepth: 1
       parity: true
       flowctrl: true
-    um2: 1939.56
+    um2: 1995.28
   - at:
       fifoDepth: 2
       parity: true
       flowctrl: true
-    um2: 2147.04
+    um2: 2188.2
   - at:
       fifoDepth: 4
       parity: true
       flowctrl: true
-    um2: 2770.6
+    um2: 2733.36
   - at:
       fifoDepth: 8
       parity: true
       flowctrl: true
-    um2: 3712.24
+    um2: 3692.08
   corner:
     tool: ecc
     pdk: ics55
     freq_mhz: 100
-    measured: '2026-09-09'
-    gen_digest: sha256:0da0e5282eaa8a4d
+    measured: '2026-09-10'
+    gen_digest: sha256:0ca37b1a1c852173
 emit:
 - kind: bsv
   package: Uart

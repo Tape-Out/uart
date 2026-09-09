@@ -60,7 +60,8 @@ Bit#(8) rIE     = 8'h10;
 Bit#(8) rIP     = 8'h14;
 Bit#(8) rDIV    = 8'h18;
 
-typedef enum {{ Init, SendLow, Quiet, SendRest, WaitWm, Drain, Done }}
+typedef enum {{ Init, SendLow, Quiet, SendRest, WaitWm, Drain,
+               TxenA, TxenB, TxenOff, TxenC, Done }}
   Phase deriving (Bits, Eq);
 
 (* synthesize *)
@@ -99,13 +100,24 @@ module mkUart{label}Tb(Empty);
 
   rule setup (ph == Init);
     case (s)
-      0: wr(rDIV, {DIV});
-      1: wr(rTXCTRL, 32'h1);                    // txen
-      2: wr(rRXCTRL, 32'h1 | ({WM} << 16));     // rxen + 接收水线门限
-      3: wr(rIE, 32'h2);                        // 只开接收水线中断
+      // 手册 18.9：复位值要「上电即 115200 波特」。口径 100 MHz，分频比
+      // 比寄存器值大一，所以 100e6/115200 = 868 -> 存 867。
+      0: action
+           let x <- u.regs.access(RegReq {{ addr: rDIV, write: False,
+                                            wdata: 0, wstrb: 4'hF }});
+           if (x.rdata[15:0] != 867) begin
+             $display("FAIL div resets to %0d, want 867 (115200 baud at 100 MHz)",
+                      x.rdata[15:0]);
+             bad <= True;
+           end
+         endaction
+      1: wr(rDIV, {DIV});
+      2: wr(rTXCTRL, 32'h1);                    // txen
+      3: wr(rRXCTRL, 32'h1 | ({WM} << 16));     // rxen + 接收水线门限
+      4: wr(rIE, 32'h2);                        // 只开接收水线中断
       default: ph <= SendLow;
     endcase
-    if (s < 4) s <= s + 1; else s <= 0;
+    if (s < 5) s <= s + 1; else s <= 0;
   endrule
 
   // 先只发到刚好等于门限的数量
@@ -164,14 +176,44 @@ module mkUart{label}Tb(Empty);
         bad <= True;
       end
       got <= got + 1;
-      if (got + 1 == fromInteger(nbytes)) ph <= Done;
+      if (got + 1 == fromInteger(nbytes)) begin ph <= TxenA; s <= 0; end
     end
+  endrule
+
+  // 手册 18.6：txen 清掉时发送被抑制、**txd 驱成高**。
+  // 只停住移位的话，线上会停在半个字节的那一位上。
+  rule txenA (ph == TxenA);
+    wr(rTXDATA, 32'h55);            // 送一个字节，让它开始往外发
+    ph <= TxenB;
+  endrule
+
+  // 看的是 `loop` 打过一拍的 `line`，不是 `u.pins.txd`：`txd` 现在读
+  // `txctrl_txen`，同一条规则里既读它又写寄存器，就要求「排在总线方法之前」
+  // 又「调用总线方法」——bsc 判这条规则永不触发，表现是相位卡住而不报错。
+  rule txenB (ph == TxenB);
+    if (line == 0) ph <= TxenOff;      // 起始位出现在线上了
+  endrule
+
+  rule txenOff (ph == TxenOff);
+    wr(rTXCTRL, 0);                    // 清掉 txen
+    ph <= TxenC;
+    s  <= 0;
+  endrule
+
+  rule txenC (ph == TxenC);
+    if (s >= 4 && line != 1) begin     // 给两拍让清零落到线上
+      $display("FAIL txen is clear but txd stayed low");
+      bad <= True;
+      ph  <= Done;
+    end else if (s == 20) ph <= Done;
+    else s <= s + 1;
   endrule
 
   rule fin (ph == Done);
     if (bad) $display("FAILED");
-    else $display("PASS uart: %0d bytes loop back, and the receive watermark "
-                  + "waits for the threshold", nbytes);
+    else $display("PASS uart: %0d bytes loop back, the receive watermark waits "
+                  + "for the threshold, div resets to 115200 baud, and clearing "
+                  + "txen drives txd high", nbytes);
     $finish(bad ? 1 : 0);
   endrule
 endmodule

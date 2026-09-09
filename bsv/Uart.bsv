@@ -168,7 +168,10 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
 
   interface regs = r.regs;
   interface UartPins pins;
-    method Bit#(1) txd = (txBit == 0) ? 1 : txSh[0];
+    // 手册 18.6：txen 清掉时发送被抑制，**txd 驱成高**。只停住移位是不够的
+    // ——线上会停在半个字节的那一位上，对端看到的是假电平。
+    method Bit#(1) txd =
+      (r.txctrl_txen == 0 || txBit == 0) ? 1 : txSh[0];
     method Action rxd(Bit#(1) v); rxLine <= v; endmethod
     method Action cts(Bit#(1) v); ctsLine <= v; endmethod
     // 低有效：队列还收得下就拉低，请对端继续发

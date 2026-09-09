@@ -55,5 +55,8 @@ regs:
   - name: div
     offset: 0x18
     desc: baud divisor
+    # 手册 18.9：复位值要「上电即 115200 波特」，而分频比比寄存器值大一。
+    # 我们的口径是 100 MHz：100e6/115200 = 868.06，取 868，故存 867。
+    # 原来的 434 是按 50 MHz 算的，在 100 MHz 上会跑成 230 kbaud。
     fields:
-      - { name: val, width: 16, sw: rw, hw: r, reset: 434 }
+      - { name: val, width: 16, sw: rw, hw: r, reset: 867 }

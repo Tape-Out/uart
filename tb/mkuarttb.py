@@ -61,6 +61,7 @@ Bit#(8) rIP     = 8'h14;
 Bit#(8) rDIV    = 8'h18;
 
 typedef enum {{ Init, SendLow, Quiet, SendRest, WaitWm, Drain,
+               Glitch, CheckGlitch,
                TxenA, TxenB, TxenOff, TxenC, Done }}
   Phase deriving (Bits, Eq);
 
@@ -77,11 +78,14 @@ module mkUart{label}Tb(Empty);
   Reg#(Bit#(32)) cyc  <- mkReg(0);
   Reg#(Bool)     bad  <- mkReg(False);
   Reg#(Bit#(1))  line <- mkReg(1);
+  // 毛刺那一段要临时接管接收线，别的时候还是自环
+  Reg#(Bit#(1))  glitch <- mkReg(1);
+  Reg#(Bool)     hijack <- mkReg(False);
 
   // 自环：发出去的就是收到的
   rule loop;
     line <= u.pins.txd;
-    u.pins.rxd(line);
+    u.pins.rxd(hijack ? glitch : line);
     u.pins.cts(0);
   endrule
 
@@ -176,8 +180,37 @@ module mkUart{label}Tb(Empty);
         bad <= True;
       end
       got <= got + 1;
-      if (got + 1 == fromInteger(nbytes)) begin ph <= TxenA; s <= 0; end
+      if (got + 1 == fromInteger(nbytes)) begin ph <= Glitch; s <= 0; end
     end
+  endrule
+
+  // 手册 18.1 写的是「16 倍过采样，每位 2/3 多数表决」。我们只在位中央采一次，
+  // 而且**起始位从不校验**——线上一个一拍宽的低脉冲就会开一帧，
+  // 随后把空闲的高电平当数据收满八位，凭空造出一个 0xFF。
+  rule glitchPhase (ph == Glitch);
+    case (s)
+      0: wr(rDIV, 7);              // 分频调小，一帧才八十来拍
+      1: wr(rRXCTRL, 32'h1);       // 确保接收开着
+      2: begin hijack <= True; glitch <= 1; end
+      8: glitch <= 0;              // 一拍宽的毛刺
+      9: glitch <= 1;
+      default: noAction;
+    endcase
+    if (s > 400) begin ph <= CheckGlitch; s <= 0; end
+    else s <= s + 1;
+  endrule
+
+  rule checkGlitch (ph == CheckGlitch);
+    let x <- u.regs.access(RegReq {{ addr: rRXDATA, write: False,
+                                     wdata: 0, wstrb: 4'hF }});
+    if (x.rdata[31] == 0) begin
+      $display("FAIL a one cycle glitch on rxd produced a character: %02h",
+               x.rdata[7:0]);
+      bad <= True;
+    end
+    hijack <= False;
+    ph <= TxenA;
+    s  <= 0;
   endrule
 
   // 手册 18.6：txen 清掉时发送被抑制、**txd 驱成高**。
@@ -212,8 +245,9 @@ module mkUart{label}Tb(Empty);
   rule fin (ph == Done);
     if (bad) $display("FAILED");
     else $display("PASS uart: %0d bytes loop back, the receive watermark waits "
-                  + "for the threshold, div resets to 115200 baud, and clearing "
-                  + "txen drives txd high", nbytes);
+                  + "for the threshold, div resets to 115200 baud, a glitch on "
+                  + "rxd makes no character, and clearing txen drives txd high",
+                  nbytes);
     $finish(bad ? 1 : 0);
   endrule
 endmodule

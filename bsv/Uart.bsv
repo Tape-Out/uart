@@ -137,7 +137,13 @@ module mkUart#(UartCfg cfg)(UartIfc#(aw, dw, fifoDepth))
       if (cfg.parity && parEn == 1 && rxBit == 10)
         rxPar <= rxLine;
       Bit#(4) last = (cfg.parity && parEn == 1) ? 11 : 10;
-      if (rxBit == last) begin
+      // 起始位走到中点还是高：那是毛刺，不是一帧的开头。不挡的话，线上一个
+      // 一拍宽的低脉冲就会开一帧，随后把空闲的高电平当数据收满八位，
+      // 凭空造出一个 0xFF。手册 18.1 要的是 16 倍过采样加每位 2/3 多数表决，
+      // 这里先把最容易踩的这一下挡住。
+      if (rxBit == 1 && rxLine == 1)
+        rxBit <= 0;
+      else if (rxBit == last) begin
         Bit#(1) want = (parSel == 1) ? ~(^rxSh) : (^rxSh);
         if (cfg.parity && parEn == 1 && rxPar != want) rxErr <= 1;
         else if (rxq.notFull) begin rxq.enq(rxSh); rxIn <= rxIn + 1; end

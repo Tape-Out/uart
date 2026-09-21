@@ -11,7 +11,7 @@ bus-neutral contracts in [`hwcore`](https://github.com/Tape-Out/hwcore), assembl
 
 ## Status
 
-Simulated. Written in Bluespec against the [`spec`](https://github.com/Tape-Out/spec)
+Simulated. Written in Bluespec against the [`spec`](https://github.com/Tape-Out/xrspec)
 contracts, with the register file generated from `regmap.yaml`. Three FIFO depths
 synthesise clean with no scheduling warnings; the area curve is measured at six depths
 and four further depths confirm the prediction never comes in low.

@@ -38,7 +38,7 @@ txt = f'''package Uart{label}Tb;
 import RegIf::*;
 import Uart::*;
 
-// 由 tb/mkuarttb.py 生成，勿手改。
+// 由 htest/mkuarttb.py 生成，勿手改。
 // 这一点：fifoDepth={depth} parity={parity} flowctrl={flowctrl} 水线={WM}
 
 Integer nbytes = {NSEND};
